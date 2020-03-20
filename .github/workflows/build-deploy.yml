@@ -1,0 +1,37 @@
+name: Build Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 10.x
+
+      - name: Install build dependencies
+        run: |
+          npm ci
+
+      - name: Build
+        run: |
+          npm run build
+          cp -r public /tmp/public
+
+      - name: Deploy
+        run: |
+          sha=$(git rev-parse --short HEAD)
+          git checkout insightsoftwareconsortium-org
+          rm -rf *
+          cp -r /tmp/public/* ./
+          git config user.name 'GitHub Actions'
+          git config user.email 'itk+community@discourse.itk.org'
+          git add *
+          git commit -m "Deployment for build of ${sha} on $(date)"
+          git push origin -f insightsoftwareconsortium-org:insightsoftwareconsortium-org
+
